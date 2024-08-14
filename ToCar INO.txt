@@ -1,0 +1,429 @@
+#include <FastLED.h> 
+#define LED_PIN_1 6
+#define LED_PIN_2 11
+#define NUM_LEDS 130 
+#define BUTTON_PIN 4 
+CRGB ledsOne[NUM_LEDS]; 
+CRGB ledsTwo[NUM_LEDS]; 
+void setup() { 
+  FastLED.addLeds<WS2812, LED_PIN_1, GRB>(ledsOne, NUM_LEDS); 
+  FastLED.addLeds<WS2812, LED_PIN_2, GRB>(ledsTwo, NUM_LEDS); 
+  pinMode(BUTTON_PIN, INPUT_PULLUP); 
+  Serial.begin(9600); 
+} 
+  boolean runThis = true; 
+  int functionPin = A0; 
+  int brightnessPin = A1; 
+  int redPin = A2; 
+  int greenPin = A3; 
+  int bluePin = A4; 
+  int functionAnalogValue = 0; 
+  int brightnessValue = 0; 
+  int redKnobAnalog = 0; 
+  int greenKnobAnalog = 0; 
+  int blueKnobAnalog = 0; 
+  int functionMapped = 0; 
+  double brightnessMapped = 0; 
+  double redMapped = 0; 
+  double greenMapped = 0; 
+  double blueMapped = 0; 
+  int colors[5][3] = {{255,0,0},{255,20,0},{240,0,100},{100,0,255},{255,0,210}}; 
+ void loop(){ 
+  functionAnalogValue = analogRead(functionPin); 
+  functionMapped = map(functionAnalogValue, 0, 1023, 0, 100); 
+  brightnessValue = analogRead(brightnessPin); 
+  brightnessMapped = map(brightnessValue, 0, 1023, 0, 100); 
+  redKnobAnalog = analogRead(redPin); 
+  greenKnobAnalog = analogRead(greenPin); 
+  blueKnobAnalog = analogRead(bluePin); 
+  redMapped = map(redKnobAnalog, 0, 1023, 0, 100); 
+  greenMapped = map(greenKnobAnalog, 0, 1023, 0, 100); 
+  blueMapped = map(blueKnobAnalog, 0, 1023, 0, 100); 
+  if(digitalRead(BUTTON_PIN) == LOW){ 
+    rainbow(); 
+  } 
+  switch(functionMapped){ 
+    case 0 ... 15:{ 
+      custom(); 
+      break; 
+    } 
+    case 16 ... 30:{ 
+      purpleGlitter(); 
+      break; 
+    } 
+    case 31 ... 45:{ 
+      glitter(); 
+      break; 
+    }
+    case 46 ... 60:{
+      smooth();
+      break;
+    } 
+    case 61 ... 75:{
+      rainbowSmooth;   
+    }
+  } 
+  } 
+  void custom(){
+    int r = 0;
+    int g = 0;
+    int b = 0;
+    double brightnessKey = (brightnessMapped/100); 
+    double redKey = (redMapped/100); //The red value is assigned a proportional brightness value here. redMapped is the mapped potentiometer value from redKnobAnalog
+    double greenKey = (greenMapped/100);
+    double blueKey = (blueMapped/100);
+
+r = trunc(brightnessKey*(255*redKey)); //Red value is changed depending on what the Red knob is turned to
+g = trunc(brightnessKey*(255*greenKey)); //Green value is changed depending on what the Green knob is turned to
+b = trunc(brightnessKey*(255*blueKey));
+
+for(int i = 0; i < NUM_LEDS; i++){
+ledsOne[i] = CRGB(r, g, b);
+ledsTwo[i] = CRGB(r, g, b);
+//Displays r, g, and b but alters their values based on the value of the brightness knob.
+if(functionMapped > 9){ //This check is redundant, but enables a quick exit from the loop if the function value changes. High responsiveness.
+break;
+}
+}
+FastLED.show(); 
+  } 
+  void displayColor(int r, int g, int b){ 
+    for(int i = 0; i < NUM_LEDS; i++){ 
+      ledsOne[i] = CRGB(r,g,b); 
+      ledsTwo[i] = CRGB(r,g,b); 
+    } 
+	Serial.print(r);
+	Serial.print(" ");
+	Serial.print(g);
+	Serial.print(" ");
+	Serial.println(b);
+    FastLED.show(); 
+  } 
+  void rainbow(){ 
+    runThis = true; 
+    int colorss[7][3] = {{179,0,0},{179,16,0},{179,70,0},{0,179,0},{0,0,179},{41,0,179},{161,0,179}}; 
+    do{ 
+      long int randomColors[7] = {random(0,7),random(0,7),random(0,7),random(0,7),random(0,7),random(0,7),random(0,7)}; 
+      int j = 0; 
+      int k = 0; 
+      for(int i = 0; i < NUM_LEDS; i++){ 
+      int theColor = trunc(randomColors[k]); 
+      int r = colorss[theColor][0]; 
+      int g = colorss[theColor][1]; 
+      int b = colorss[theColor][2]; 
+      ledsOne[i] = CRGB(r,g,b); 
+      ledsTwo[i] = CRGB(r,g,b); 
+      j++; 
+      if(j == 19){ 
+        k++; 
+        j = 0; 
+      } 
+      } 
+    FastLED.show(); 
+    delay(35); 
+    if(digitalRead(BUTTON_PIN) == HIGH){ 
+    return; 
+    } 
+ }while(runThis == true); 
+  } 
+  void smooth(){ 
+    runThis = true; 
+  //First, we will gether values of the current color values. 
+  //If the current color values are not the same as the target value, we will move the 
+  //Start off purple 
+    for(int i = 0; i < NUM_LEDS; i++){ 
+      ledsOne[i] = CRGB(255,0,180); 
+      ledsOne[i] = CRGB(255,0,180); 
+    } 
+  //Variable declarations 
+    int full = 255;
+    int r = 0;
+    int g = 0;
+    int b = 0; 
+    double multiplierR = 1; 
+    double multiplierG = 1; 
+    double multiplierB = 1; 
+    double t = 1; 
+    double tt = 0; 
+    double ttt = 1; 
+    int wavelength = 200;
+    int currentR = ledsOne[1].r; 
+    int currentG = ledsOne[1].g; 
+    int currentB = ledsOne[1].b; 
+    do{ 
+      int randomColor = random(0,5);
+    //Find where we are 
+      currentR = ledsOne[1].r; 
+      currentG = ledsOne[1].g; 
+      currentB = ledsOne[1].b; 
+    //Find where we're going 
+      int targetR = colors[randomColor][0]; 
+      int targetG = colors[randomColor][1]; 
+      int targetB = colors[randomColor][2]; 
+      //Decide which way to move the values (by changing t) 
+      do{
+          currentR = ledsOne[1].r; 
+          currentG = ledsOne[1].g; 
+          currentB = ledsOne[1].b;   
+                 
+        if(currentR < targetR){ 
+          t += 0.0002; 
+        }else 
+        if(currentR > targetR){ 
+          t -= 0.0002; 
+        } 
+        if(currentG < targetG){ 
+          tt += 0.0002; 
+        }else 
+        if(currentG > targetG){ 
+          tt -= 0.0002; 
+        } 
+        if(currentB < targetB){ 
+          ttt += 0.0002; 
+        }else 
+        if(currentB > targetB){ 
+          ttt -= 0.0002; 
+        } 
+      //Update all values. If t has anything added or subrtracted, it will show 
+        multiplierR = 1 * t; 
+        multiplierG = 1 * tt; 
+        multiplierB = 1 * ttt;
+            
+        r = (trunc(multiplierR*full));
+        g = (trunc(multiplierG*full));
+        b = (trunc(multiplierB*full)); 
+        for(int i = 0; i < NUM_LEDS; i++){ 
+          ledsOne[i] = CRGB(r,g,b); 
+          ledsTwo[i] = CRGB(r,g,b); 
+        }
+          currentR = ledsOne[1].r; 
+          currentG = ledsOne[1].g; 
+          currentB = ledsOne[1].b;
+        FastLED.show();
+        functionAnalogValue = analogRead(functionPin); 
+        functionMapped = map(functionAnalogValue, 0, 1023, 0, 100); 
+        if(functionMapped < 30 || functionMapped > 39){ 
+          return;
+        } 
+      }while(currentR != targetR || currentG != targetG || currentB != targetB);
+    }while(runThis == true); 
+  } 
+  void glitter(){ //A function that makes a glitter pattern with flashes that last different lengths of time of any RGB color at any brightness
+//uses millis() to emulate threading 
+    runThis = true;
+    int r = 255;
+    int g = 255;
+    int b = 230; 
+  int NUM_GLITTERS = 20; 
+  long unsigned long lastMillis[NUM_GLITTERS]; 
+  long unsigned long millisLife[NUM_GLITTERS]; 
+  int randoms[NUM_GLITTERS]; 
+  //array initializations for the first execution
+    for(int i =0; i < NUM_GLITTERS; i++){
+        randoms[i] = random(0,NUM_LEDS);
+        millisLife[i] = random(20,101);
+        lastMillis[i] = 0;
+        }
+  //Start off all black		
+    for(int i = 0; i < NUM_LEDS; i++){ 
+      ledsOne[i] = CRGB(0,0,0); 
+      ledsTwo[i] = CRGB(0,0,0); 
+    } 
+    do{
+	//Gather all of the potentiometer values
+		redKnobAnalog = analogRead(redPin); 
+		greenKnobAnalog = analogRead(greenPin); 
+		blueKnobAnalog = analogRead(bluePin); 
+		redMapped = map(redKnobAnalog, 0, 1023, 0, 100); 
+		greenMapped = map(greenKnobAnalog, 0, 1023, 0, 100); 
+		blueMapped = map(blueKnobAnalog, 0, 1023, 0, 100); 
+		brightnessValue = analogRead(brightnessPin); 
+		brightnessMapped = map(brightnessValue, 0, 1023, 0, 100); 
+		double redKey = (redMapped/100);
+		double greenKey = (greenMapped/100);
+		double blueKey = (blueMapped/100);
+		double brightnessKey = (brightnessMapped/100);
+		r = trunc(brightnessKey*(255*redKey));
+		g = trunc(brightnessKey*(255*greenKey));
+		b = trunc(brightnessKey*(255*blueKey));
+
+      //check millis will be the main function of this part. 
+      for(int i = 0; i < NUM_GLITTERS; i++){ //For all the glitters in the randoms array, check to see how long they have been alive. If they are at the time limit, they turn black. Then a new assignment is made for that random and also it gets a corresponding random life time in the millisTimes array. 
+        if((millis()-lastMillis[i]) >= millisLife[i]){ 
+			  ledsOne[randoms[i]] = CRGB(0,0,0);
+			  ledsTwo[randoms[i]] = CRGB(0,0,0); 
+			  lastMillis[i] = millis(); 
+			  millisLife[i] = random(140,500); 
+			  randoms[i] = random(0,NUM_LEDS);
+			  ledsOne[randoms[i]] = CRGB(r,g,b);
+              ledsTwo[randoms[i]] = CRGB(r,g,b); 
+        } 
+      } 
+      FastLED.show(); 
+      functionAnalogValue = analogRead(functionPin); 
+      functionMapped = map(functionAnalogValue, 0, 1023, 0, 100); 
+      if(functionMapped < 20 || functionMapped > 29){ 
+        runThis = false; 
+      } 
+    }while(runThis == true); 
+  }
+void purpleGlitter(){
+	brightnessValue = analogRead(brightnessPin);
+	brightnessMapped = map(brightnessValue, 0, 1023, 0, 100);
+	double brightnessKey = (brightnessMapped/100);
+	
+	int r = (225*brightnessKey);
+	int g = 0;
+	int b = (255*brightnessKey);
+	int random1 = random(0,120);
+	
+	for(int i = 0; i < NUM_LEDS; i++){
+		ledsOne[i] = CRGB(r,g,b);
+		ledsTwo[i] = CRGB(r,g,b);
+	}
+	
+	ledsOne[random1] = CRGB(255,180,0);
+	ledsOne[random1+1] = CRGB(255,180,0);
+	ledsOne[random1+2] = CRGB(255,180,0);
+
+	ledsTwo[random1] = CRGB(255,180,0);
+	ledsTwo[random1+1] = CRGB(255,180,0);
+	ledsTwo[random1+2] = CRGB(255,180,0);
+
+	FastLED.show();
+	int delayTime = random(80,150);
+	delay(delayTime);
+}
+
+
+void rainbowSmooth(){
+    runThis = true; 
+	//Set color to purple
+    for(int i = 0; i < NUM_LEDS; i++){ 
+      ledsOne[i] = CRGB(255,0,180); 
+      ledsOne[i] = CRGB(255,0,180); 
+    } 
+  //Variable declarations 
+    int full = 255; //This is used to set the brightness of the colors.
+    int r[7] = {0,0,0,0,0,0,0};
+    int g[7] = {0,0,0,0,0,0,0};  //These arrays are used to hold the actual rgb values which will be applied to the LED pins at the end.
+    int b[7] = {0,0,0,0,0,0,0}; 
+    double multiplierR[7] = {1, 1, 1, 1, 1, 1, 1}; 
+    double multiplierG[7] = {1, 1, 1, 1, 1, 1, 1};   //These arrays are used to store the values which are multiplied with the current rgb values to change the colors.
+    double multiplierB[7] = {1, 1, 1, 1, 1, 1, 1}; 
+    double t[7] = {1, 1, 1, 1, 1, 1, 1}; 
+    double tt[7] = {0, 0, 0, 0, 0, 0, 0};
+    double ttt[7] = {1, 1, 1, 1, 1, 1, 1};
+    //int wavelength = 200;
+    int currentR[7] = {255,255,255,255,255,255,255}; 
+    int currentG[7] = {0,0,0,0,0,0,0};
+    int currentB[7] = {180,180,180,180,180,180,180}; 
+	
+	int targetR[7] = {0,0,0,0,0,0,0};
+	int targetG[7] = {0,0,0,0,0,0,0};
+	int targetB[7] = {0,0,0,0,0,0,0};
+	boolean redDone = false;
+	boolean greenDone = false;
+	boolean blueDone = false;
+    do{ 
+	//Make an array of random colors instead of one random color:
+      int randomColor[7] = {random(0,5), random(0,5), random(0,5), random(0,5), random(0,5), random(0,5), random(0,5)};
+	
+    //Find out what color each segment currently is
+		int thePosition = 0;
+		for(int i = 0; i < 7; i++){
+			currentR[i] = ledsOne[thePosition].r;
+			currentG[i] = ledsOne[thePosition].g;
+			currentB[i] = ledsOne[thePosition].b;
+		    thePosition += 20;
+		}
+	//Find the rgb values of each of the seven target colors (where each rgb value needs to end up by the end of the upcoming do while)
+	  int thisPosition = 0;
+		for(int i = 0; i < 7; i++){
+			targetR[i] = colors[randomColor[i]][0];
+			targetG[i] = colors[randomColor[i]][1];
+			targetB[i] = colors[randomColor[i]][2];
+		    thisPosition += 20;
+		}
+    
+	  //Decide which way to move the values (by changing t) 
+      do{
+		//Assign current array the values in the real LED strip.
+		int ii = 0;
+		for(int j = 0; j < 7;){
+          currentR[j] = ledsOne[ii].r; 
+          currentG[j] = ledsOne[ii].g; 
+          currentB[j] = ledsOne[ii].b; 
+		  ii += 20;
+		  j += 1;
+		}		  
+	  //We will determine whether the current color is less than, greater than, or equal to the target color.
+        for(int i = 0; i < 7; i++){
+			if(currentR[i] < targetR[i]){ 
+			  t[i] += 0.0002; 
+			}else 
+			if(currentR[i] > targetR[i]){ 
+			  t[i] -= 0.0002; 
+			}else
+			if(currentR[i] == targetR[i]){
+				redDone = true;
+			}
+			if(currentG[i] < targetG[i]){ 
+			  tt[i] += 0.0002; 
+			}else 
+			if(currentG[i] > targetG[i]){ 
+			  tt[i] -= 0.0002; 
+			}else
+			if(currentG[i] == targetG[i]){
+				greenDone = true;
+			}
+			if(currentB[i] < targetB[i]){ 
+			  ttt[i] += 0.0002; 
+			}else 
+			if(currentB[i] > targetB[i]){ 
+			  ttt[i] -= 0.0002; 
+			}else
+			if(currentB[i] == targetB[i]){
+				blueDone = true;
+			}
+		
+      //Update all values. If t has anything added or subrtracted, it will show 
+        multiplierR[i] = 1 * t[i]; 
+        multiplierG[i] = 1 * tt[i]; 
+        multiplierB[i] = 1 * ttt[i];
+            
+        r[i] = (trunc(multiplierR[i]*full));
+        g[i] = (trunc(multiplierG[i]*full));
+        b[i] = (trunc(multiplierB[i]*full));
+		}
+		
+		int masterPosition = 0;
+		int nextEnd = 19;
+		for(int i = 0; i < 7; i++){
+			for(int j = masterPosition; j < nextEnd; j += 1){
+				  ledsOne[j] = CRGB(r[i],g[i],b[i]); 
+				  ledsTwo[j] = CRGB(r[i],g[i],b[i]); 
+				  masterPosition = j;
+				}
+		  nextEnd = (masterPosition + 20);
+		}
+		int theePosition = 0;
+		for(int i = 0; i < 7; i++){
+			currentR[i] = ledsOne[theePosition].r;
+			currentG[i] = ledsOne[theePosition].g;
+			currentB[i] = ledsOne[theePosition].b;
+		    theePosition += 20;
+		}
+		
+		FastLED.show();
+        functionAnalogValue = analogRead(functionPin); 
+        functionMapped = map(functionAnalogValue, 0, 1023, 0, 100); 
+        if(functionMapped < 61 || functionMapped > 75){ 
+          return;
+        } 
+      }while(redDone != true && greenDone != true && blueDone != true);
+	  redDone = false;
+	  greenDone = false;
+	  blueDone = false;
+    }while(runThis == true); 
+}
